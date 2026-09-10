@@ -1,122 +1,182 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useState } from "react";
+import type { EvaluationResult, Student, ValidationErrorCode } from "./types";
+import { defaultStudent } from "./data/defaultStudent";
+import { roles } from "./data/roles";
+import { validateStudent } from "./domain/validation";
+import { evaluateAllRoles } from "./domain/eligibility";
+import { sortResults } from "./domain/sorting";
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+interface AppState {
+  student: Student;
+  results: EvaluationResult[];
+  eligibleCount: number;
+  ineligibleCount: number;
+  validationErrors: ValidationErrorCode[];
+  hasEvaluated: boolean;
 }
 
-export default App
+const initialState: AppState = {
+  student: defaultStudent,
+  results: [],
+  eligibleCount: 0,
+  ineligibleCount: 0,
+  validationErrors: [],
+  hasEvaluated: false,
+};
+
+function App() {
+  const [state, setState] = useState<AppState>(initialState);
+
+  function handleStudentChange(next: Student) {
+    setState((prev) => ({ ...prev, student: next }));
+  }
+
+  function handleEvaluate() {
+    const validation = validateStudent(state.student);
+
+    if (!validation.valid) {
+      setState((prev) => ({
+        ...prev,
+        results: [],
+        eligibleCount: 0,
+        ineligibleCount: 0,
+        validationErrors: validation.errors,
+        hasEvaluated: true,
+      }));
+      return;
+    }
+
+    const evaluated = evaluateAllRoles(state.student, roles);
+    const sorted = sortResults(evaluated);
+    const eligibleCount = sorted.filter((r) => r.status === "ELIGIBLE").length;
+    const ineligibleCount = sorted.length - eligibleCount;
+
+    setState((prev) => ({
+      ...prev,
+      results: sorted,
+      eligibleCount,
+      ineligibleCount,
+      validationErrors: [],
+      hasEvaluated: true,
+    }));
+  }
+
+  function handleReset() {
+    setState(initialState);
+  }
+
+  function handleSample() {
+    setState((prev) => ({ ...prev, student: defaultStudent }));
+  }
+
+    return (
+    <div>
+      <h1>Career Fair Eligibility Shortlist</h1>
+
+      <div>
+        <label>
+          Branch:{" "}
+          <input
+            value={state.student.branch}
+            onChange={(e) =>
+              handleStudentChange({ ...state.student, branch: e.target.value })
+            }
+          />
+        </label>
+      </div>
+
+      <div>
+        <label>
+          CGPA:{" "}
+          <input
+            value={state.student.cgpa}
+            onChange={(e) =>
+              handleStudentChange({ ...state.student, cgpa: e.target.value })
+            }
+          />
+        </label>
+      </div>
+
+      <div>
+        <label>
+          Graduation Year:{" "}
+          <input
+            value={state.student.graduationYear}
+            onChange={(e) =>
+              handleStudentChange({
+                ...state.student,
+                graduationYear: e.target.value,
+              })
+            }
+          />
+        </label>
+      </div>
+
+      <div>
+        <label>
+          Active Backlogs:{" "}
+          <input
+            value={state.student.activeBacklogs}
+            onChange={(e) =>
+              handleStudentChange({
+                ...state.student,
+                activeBacklogs: e.target.value,
+              })
+            }
+          />
+        </label>
+      </div>
+
+      <div>
+        <label>
+          Skills:{" "}
+          <input
+            value={state.student.skills}
+            onChange={(e) =>
+              handleStudentChange({ ...state.student, skills: e.target.value })
+            }
+          />
+        </label>
+      </div>
+
+      <div>
+        <button onClick={handleSample}>Sample</button>
+        <button onClick={handleReset}>Reset</button>
+        <button onClick={handleEvaluate}>Evaluate</button>
+      </div>
+
+      {state.validationErrors.length > 0 && (
+        <ul>
+          {state.validationErrors.map((err) => (
+            <li key={err}>{err}</li>
+          ))}
+        </ul>
+      )}
+
+      {state.hasEvaluated && state.validationErrors.length === 0 && (
+        <div>
+          <p>
+            Eligible: {state.eligibleCount} | Ineligible:{" "}
+            {state.ineligibleCount}
+          </p>
+          <ul>
+            {state.results.map((result) => (
+              <li key={result.role.id}>
+                {result.role.title} ({result.role.id}) — {result.status}
+                {result.failures.length > 0 && (
+                  <ul>
+                    {result.failures.map((f) => (
+                      <li key={f}>{f}</li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default App;
