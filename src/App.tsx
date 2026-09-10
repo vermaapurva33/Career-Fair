@@ -10,6 +10,7 @@ import RoleRequirements from "./components/RoleRequirements";
 import EvaluationControls from "./components/EvaluationControls";
 import EvaluationSummary from "./components/EvaluationSummary";
 import ResultsList from "./components/ResultsList";
+import RoleCardGrid from "./components/RoleCardGrid";
 interface AppState {
   student: Student;
   results: EvaluationResult[];
@@ -30,6 +31,7 @@ const initialState: AppState = {
 
 function App() {
   const [state, setState] = useState<AppState>(initialState);
+  const [viewMode, setViewMode] = useState<"list" | "cards">("list");
 
   function handleStudentChange(next: Student) {
     setState((prev) => ({ ...prev, student: next }));
@@ -97,7 +99,23 @@ function App() {
         validationErrors={state.validationErrors}
       />
 
-      <ResultsList results={state.results} />
+      {/* <ResultsList results={state.results} /> */}
+      {state.results.length > 0 && (
+        <div>
+          <button onClick={() => setViewMode("list")} disabled={viewMode === "list"}>
+            List View
+          </button>
+          <button onClick={() => setViewMode("cards")} disabled={viewMode === "cards"}>
+            Card View
+          </button>
+        </div>
+      )}
+
+      {viewMode === "list" ? (
+        <ResultsList results={state.results} />
+      ) : (
+        <RoleCardGrid results={state.results} />
+      )}
     </div>
   );
 }
