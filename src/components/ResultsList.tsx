@@ -11,7 +11,7 @@ function ResultsList({ results }: ResultsListProps) {
   }
 
   return (
-    <ul>
+    <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
       {results.map((result) => (
         <ResultItem key={result.role.id} result={result} />
       ))}

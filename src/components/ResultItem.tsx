@@ -6,8 +6,15 @@ interface ResultItemProps {
 
 function ResultItem({ result }: ResultItemProps) {
   return (
-    <li>
-      {result.role.title} ({result.role.id}) — {result.status}
+    <li className="result-item">
+      <div className="result-item-header">
+        <span>
+          {result.role.title} ({result.role.id})
+        </span>
+        <span className={`status status-${result.status.toLowerCase()}`}>
+          {result.status}
+        </span>
+      </div>
       {result.failures.length > 0 && (
         <ul>
           {result.failures.map((f) => (

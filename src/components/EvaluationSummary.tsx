@@ -31,7 +31,7 @@ function EvaluationSummary({
   }
 
   return (
-    <p>
+    <p className="summary-line">
       Eligible: {eligibleCount} | Ineligible: {ineligibleCount}
     </p>
   );
