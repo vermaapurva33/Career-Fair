@@ -11,6 +11,7 @@ import EvaluationControls from "./components/EvaluationControls";
 import EvaluationSummary from "./components/EvaluationSummary";
 import ResultsList from "./components/ResultsList";
 import RoleCardGrid from "./components/RoleCardGrid";
+import "./App.css";
 interface AppState {
   student: Student;
   results: EvaluationResult[];
